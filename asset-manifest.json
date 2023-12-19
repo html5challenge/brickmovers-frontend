@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/brickmovers-frontend/static/css/main.26fc0cf6.css",
+    "main.js": "/brickmovers-frontend/static/js/main.eb75097a.js",
+    "static/js/787.efe9fe5d.chunk.js": "/brickmovers-frontend/static/js/787.efe9fe5d.chunk.js",
+    "static/media/logo.svg": "/brickmovers-frontend/static/media/logo.6ce24c58023cc2f8fd88fe9d219db6c6.svg",
+    "index.html": "/brickmovers-frontend/index.html",
+    "main.26fc0cf6.css.map": "/brickmovers-frontend/static/css/main.26fc0cf6.css.map",
+    "main.eb75097a.js.map": "/brickmovers-frontend/static/js/main.eb75097a.js.map",
+    "787.efe9fe5d.chunk.js.map": "/brickmovers-frontend/static/js/787.efe9fe5d.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.26fc0cf6.css",
+    "static/js/main.eb75097a.js"
+  ]
+}
