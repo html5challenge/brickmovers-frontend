@@ -4,7 +4,8 @@ import React, { useState } from "react";
 import resampler from "audio-resampler";
 import "./RecordButton.css"; // Import the CSS file
 import LegoAssistant from "./LegoAssistant";
-import Component from "./Component";
+import useTypewriter from 'react-typewriter-hook';
+
 
 let recorder = null;
 let context = null,
@@ -12,30 +13,15 @@ let context = null,
   size = 0,
   audioInput = null;
 
-class Effect {
-  constructor(canvasWidth, canvasHeight) {
-    this.canvasWidth = canvasWidth;
-    this.canvasHeight = canvasHeight;
-    this.fontSize = 25;
-    this.columns = this.canvasWidth / this.fontSize;
-    this.symbols = [];
-    this.initialize();
-  }
-  initialize() {
-    for (let i = 0; i < this.columns; i++) {
-      this.symbols[i] = new Symbol(i, 0, this.fontSize, this.canvasHeight);
-    }
-  }
-  resize(width, height) {
-    this.canvasWidth = width;
-    this.canvasHeight = height;
-    this.columsn = this.canvasWidth / this.fontSize;
-  }
-}
+let commands = [];
+let characteristic;
 
 function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [buttonSize, setButtonSize] = useState(100);
+  const [responseText, setResponseText] = useState("");
+  const handleTyping = useTypewriter(responseText);
+
 
   let mediaRecorder;
   let recordedChunks = [];
@@ -99,6 +85,7 @@ function App() {
   }
 
   const handleRecord = () => {
+    setResponseText("Hearing...");
     context = new (window.AudioContext || window.webkitAudioContext)();
     // 清空数据
     inputData = [];
@@ -167,7 +154,18 @@ function App() {
         }
       )
         .then((response) => response.json())
-        .then((data) => console.log(data))
+        .then((data) => {
+          console.log(data);
+          const numbers = data.match(/\d+/g);
+          const mappedNumbers = numbers ? numbers.map(Number) : [];
+          console.log(mappedNumbers)
+          setResponseText(data);
+          if(mappedNumbers.length > 0){
+            setPeople(mappedNumbers[0]);
+            startDealCard();
+            console.log(commands)
+          }
+        })
         .catch((error) => console.error("Error:", error));
     });
   };
@@ -186,6 +184,59 @@ function App() {
     }
   };
 
+/**
+ * 蓝牙连接
+ */
+  function addCommand(commandName, parameters) {
+      commands = [{ name: commandName, parameters: !parameters ? {} : parameters }, ...commands];
+  }
+  const handleConnect = async() => {
+    const serviceUUID = 'c5f50001-8280-46da-89f4-6d8051e4aeef';
+    const device = await navigator.bluetooth.requestDevice({
+        filters: [{
+            services: [serviceUUID]
+        }]
+    });
+
+    device.addEventListener("gattserverdisconnected", e => {
+        console.error("disconnection");
+    });
+
+    const server = await device.gatt.connect();
+    const service = await server.getPrimaryService(serviceUUID);
+    characteristic = await service.getCharacteristic('c5f50002-8280-46da-89f4-6d8051e4aeef');
+
+    characteristic.addEventListener("characteristicvaluechanged", async e => {
+        const message = new TextDecoder().decode(e.target.value.buffer);
+        console.info("received: " + message);
+        if (message.endsWith("rdy") && commands.length > 0) {
+            var command = commands.pop();
+            var commandStr = command.name + "|" + JSON.stringify(command.parameters) + "\n";
+
+            console.info("send command: " + commandStr);
+
+            var data = new Uint8Array([6, ...new Uint8Array(new TextEncoder().encode(commandStr))]);
+            await characteristic.writeValueWithResponse(data);
+        }
+    });
+    characteristic.startNotifications();
+  }
+
+
+  const setPeople = (people) => {
+    addCommand("set_people", {
+      people: parseInt(people)
+    })
+  }
+
+  const startDealCard = () => {
+    addCommand("start")
+  }
+
+  const stopDealCard = () => {
+    addCommand("stop")
+  }
+
   return (
     <div className="App">
       <div className="flex flex-col">
@@ -193,35 +244,39 @@ function App() {
           <div className="bg-[#0f0f0f] text-white h-screen p-4 flex flex-col items-center justify-center space-y-8">
             <h1 className="text-4xl font-bold">Brick Movers</h1>
             <LegoAssistant />
+            <div>{handleTyping}</div>
             <button
-            className={`record-button bg-gradient-to-r from-purple-400 to-blue-500 font-bold ${
-              isRecording ? "recording" : ""
-            }`}
-            onClick={handleButtonClick}
-            style={{
-              width: `${buttonSize}px`,
-              height: `${buttonSize}px`,
-              display: "block",
-            }}
-          >
-            {isRecording ? "Stop" : "Record"}
-          </button>
+              className={`record-button bg-gradient-to-r from-purple-400 to-blue-500 font-bold ${
+                isRecording ? "recording" : ""
+              }`}
+              onClick={handleButtonClick}
+              style={{
+                width: `${buttonSize}px`,
+                height: `${buttonSize}px`,
+                display: "block",
+              }}
+            >
+              {isRecording ? "Stop" : "Record"}
+            </button>
             <div className="flex space-x-4">
               <button
-                className="bg-green-600 hover:bg-green-700 focus:ring focus:ring-green-300"
+                className="bg-green-600 hover:bg-green-700 focus:ring focus:ring-green-300 rounded p-2"
                 variant="default"
+                onClick={handleConnect}
               >
                 Connect LEGO Spike Prime Hub
               </button>
               <button
-                className="bg-blue-600 hover:bg-blue-700 focus:ring focus:ring-blue-300"
+                className="bg-blue-600 hover:bg-blue-700 focus:ring focus:ring-blue-300 rounded p-2"
                 variant="default"
+                onClick={startDealCard}
               >
                 Start Play
               </button>
               <button
-                className="bg-red-600 hover:bg-red-700 focus:ring focus:ring-red-300"
+                className="bg-red-600 hover:bg-red-700 focus:ring focus:ring-red-300 rounded p-2"
                 variant="destructive"
+                onClick={stopDealCard}
               >
                 Stop Play
               </button>
