@@ -13,7 +13,7 @@
 .record-button {
   border: none;
   border-radius: 50%;
-  background: linear-gradient(135deg, #df4896, #834d9b, #007BFF, #C0C0C0);
+  /* background: linear-gradient(135deg, #df4896, #834d9b, #007BFF, #C0C0C0); */
   color: white;
   font-size: 20px;
   transition: all 0.5s;

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import resampler from "audio-resampler";
 import "./RecordButton.css"; // Import the CSS file
 import LegoAssistant from "./LegoAssistant";
+import Component from "./Component";
 
 let recorder = null;
 let context = null,
@@ -187,38 +188,47 @@ function App() {
 
   return (
     <div className="App">
-      <LegoAssistant />
-      <div>
-      <button
-        className={`record-button ${isRecording ? "recording" : ""}`}
-        onClick={handleButtonClick}
-        style={{
-          width: `${buttonSize}px`,
-          height: `${buttonSize}px`,
-          display: "block",
-        }}
-      >
-        {isRecording ? "Stop" : "Record"}
-      </button>
+      <div className="flex flex-col">
+        <div>
+          <div className="bg-[#0f0f0f] text-white h-screen p-4 flex flex-col items-center justify-center space-y-8">
+            <h1 className="text-4xl font-bold">Brick Movers</h1>
+            <LegoAssistant />
+            <button
+            className={`record-button bg-gradient-to-r from-purple-400 to-blue-500 font-bold ${
+              isRecording ? "recording" : ""
+            }`}
+            onClick={handleButtonClick}
+            style={{
+              width: `${buttonSize}px`,
+              height: `${buttonSize}px`,
+              display: "block",
+            }}
+          >
+            {isRecording ? "Stop" : "Record"}
+          </button>
+            <div className="flex space-x-4">
+              <button
+                className="bg-green-600 hover:bg-green-700 focus:ring focus:ring-green-300"
+                variant="default"
+              >
+                Connect LEGO Spike Prime Hub
+              </button>
+              <button
+                className="bg-blue-600 hover:bg-blue-700 focus:ring focus:ring-blue-300"
+                variant="default"
+              >
+                Start Play
+              </button>
+              <button
+                className="bg-red-600 hover:bg-red-700 focus:ring focus:ring-red-300"
+                variant="destructive"
+              >
+                Stop Play
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-      {/* <button
-        className="bg-green-600 hover:bg-green-700 focus:ring focus:ring-green-300"
-        variant="default"
-      >
-        Connect LEGO Spike Prime Hub
-      </button>
-      <button
-        className="bg-blue-600 hover:bg-blue-700 focus:ring focus:ring-blue-300"
-        variant="default"
-      >
-        Start Play
-      </button>
-      <button
-        className="bg-red-600 hover:bg-red-700 focus:ring focus:ring-red-300"
-        variant="destructive"
-      >
-        Stop Play
-      </button> */}
     </div>
   );
 }
