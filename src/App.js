@@ -4,8 +4,8 @@ import React, { useState } from "react";
 import resampler from "audio-resampler";
 import "./RecordButton.css"; // Import the CSS file
 import LegoAssistant from "./LegoAssistant";
-import useTypewriter from 'react-typewriter-hook';
-
+import useTypewriter from "react-typewriter-hook";
+import ToyBrickIcon from "./ToyBrickIcon";
 
 let recorder = null;
 let context = null,
@@ -16,14 +16,42 @@ let context = null,
 let commands = [];
 let characteristic;
 
+
+function convertChineseNumbersToArabic(text) {
+  const chineseArabicMap = {
+    '零': 0,
+    '一': 1,
+    '二': 2,
+    '三': 3,
+    '四': 4,
+    '五': 5,
+    '六': 6,
+    '七': 7,
+    '八': 8,
+    '九': 9,
+    '十': 10
+    // Add more if needed
+  };
+
+  let result = '';
+  for (let char of text) {
+    if (chineseArabicMap.hasOwnProperty(char)) {
+      result += chineseArabicMap[char];
+    } else {
+      result += char;
+    }
+  }
+
+  return result;
+}
+
 function App() {
   const [isRecording, setIsRecording] = useState(false);
-  const [isPrimeConnected, setIsPrimeConnected] = useState(false)
-  const [isSendingCommands, setIsSendingCommands] = useState(false)
+  const [isPrimeConnected, setIsPrimeConnected] = useState(false);
+  const [isSendingCommands, setIsSendingCommands] = useState(false);
   const [buttonSize, setButtonSize] = useState(100);
   const [responseText, setResponseText] = useState("");
   const handleTyping = useTypewriter(responseText);
-
 
   let mediaRecorder;
   let recordedChunks = [];
@@ -158,14 +186,15 @@ function App() {
         .then((response) => response.json())
         .then((data) => {
           console.log(data);
-          const numbers = data.match(/\d+/g);
+          let convertedData = convertChineseNumbersToArabic(data);
+          const numbers = convertedData.match(/\d+/g);
           const mappedNumbers = numbers ? numbers.map(Number) : [];
-          console.log(mappedNumbers)
-          setResponseText(data);
-          if(mappedNumbers.length > 0){
+          console.log(mappedNumbers);
+          setResponseText(convertedData);
+          if (mappedNumbers.length > 0) {
             setPeople(mappedNumbers[0]);
             startDealCard();
-            console.log(commands)
+            console.log(commands);
           }
         })
         .catch((error) => console.error("Error:", error));
@@ -186,78 +215,93 @@ function App() {
     }
   };
 
-/**
- * 蓝牙连接
- */
+  /**
+   * 蓝牙连接
+   */
   function addCommand(commandName, parameters) {
-      commands = [{ name: commandName, parameters: !parameters ? {} : parameters }, ...commands];
+    commands = [
+      { name: commandName, parameters: !parameters ? {} : parameters },
+      ...commands,
+    ];
   }
-  const handleConnect = async() => {
-    const serviceUUID = 'c5f50001-8280-46da-89f4-6d8051e4aeef';
+  const handleConnect = async () => {
+    const serviceUUID = "c5f50001-8280-46da-89f4-6d8051e4aeef";
     const device = await navigator.bluetooth.requestDevice({
-        filters: [{
-            services: [serviceUUID]
-        }]
+      filters: [
+        {
+          services: [serviceUUID],
+        },
+      ],
     });
 
-    device.addEventListener("gattserverdisconnected", e => {
-        console.error("disconnection");
-        setIsPrimeConnected(false);
+    device.addEventListener("gattserverdisconnected", (e) => {
+      console.error("disconnection");
+      setIsPrimeConnected(false);
     });
 
     const server = await device.gatt.connect();
     const service = await server.getPrimaryService(serviceUUID);
-    characteristic = await service.getCharacteristic('c5f50002-8280-46da-89f4-6d8051e4aeef');
+    characteristic = await service.getCharacteristic(
+      "c5f50002-8280-46da-89f4-6d8051e4aeef"
+    );
 
-    characteristic.addEventListener("characteristicvaluechanged", async e => {
-        const message = new TextDecoder().decode(e.target.value.buffer);
-        console.info("received: " + message);
-        if (message.endsWith("rdy") && commands.length > 0 && !isSendingCommands) {
-            try {
-              setIsSendingCommands(true);
-              var command = commands[commands.length - 1];
-              var commandStr = command.name + "|" + JSON.stringify(command.parameters) + "\n";
-  
-              console.info("send command: " + commandStr);
-  
-              var data = new Uint8Array([6, ...new Uint8Array(new TextEncoder().encode(commandStr))]);
-              await characteristic.writeValueWithResponse(data);
-              commands.pop();
-            } catch (e) {
-              console.error(e);
-            } finally {
-              setIsSendingCommands(false);
-            }
+    characteristic.addEventListener("characteristicvaluechanged", async (e) => {
+      const message = new TextDecoder().decode(e.target.value.buffer);
+      console.info("received: " + message);
+      if (
+        message.endsWith("rdy") &&
+        commands.length > 0 &&
+        !isSendingCommands
+      ) {
+        try {
+          setIsSendingCommands(true);
+          var command = commands[commands.length - 1];
+          var commandStr =
+            command.name + "|" + JSON.stringify(command.parameters) + "\n";
+
+          console.info("send command: " + commandStr);
+
+          var data = new Uint8Array([
+            6,
+            ...new Uint8Array(new TextEncoder().encode(commandStr)),
+          ]);
+          await characteristic.writeValueWithResponse(data);
+          commands.pop();
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setIsSendingCommands(false);
         }
+      }
     });
     characteristic.startNotifications();
 
     setIsPrimeConnected(true);
-  }
-
+  };
 
   const setPeople = (people) => {
     addCommand("set_people", {
-      people: parseInt(people)
-    })
-  }
+      people: parseInt(people),
+    });
+  };
 
   const startDealCard = () => {
-    addCommand("start")
-  }
+    addCommand("start");
+  };
 
   const stopDealCard = () => {
-    addCommand("stop")
-  }
+    addCommand("stop");
+  };
 
   return (
     <div className="App">
       <div className="flex flex-col">
         <div>
           <div className="bg-[#0f0f0f] text-white h-screen p-4 flex flex-col items-center justify-center space-y-8">
-            <h1 className="text-4xl font-bold">Brick Movers</h1>
+            <ToyBrickIcon className="w-10 h-10 mr-3 animate-bounce" />
+            <h1 className="font-bold text-6xl font-bold text-[#ffed00]" style={{marginTop: 0}}>Brick Movers</h1>
             <LegoAssistant />
-            <div>{handleTyping}</div>
+            <div className="text-4xl text-[#0057A8] bg-[#FFD500] p-3">{handleTyping}</div>
             <button
               className={`record-button bg-gradient-to-r from-purple-400 to-blue-500 font-bold ${
                 isRecording ? "recording" : ""
@@ -272,30 +316,32 @@ function App() {
               {isRecording ? "Stop" : "Record"}
             </button>
             <div className="flex space-x-4">
-              {
-                !isPrimeConnected
-                && <button
-                  className="bg-green-600 hover:bg-green-700 focus:ring focus:ring-green-300 rounded p-2"
+              {!isPrimeConnected && (
+                <button
+                  className="bg-black flex items-center justify-center text-white border-2 border-yellow-500 hover:border-yellow-300 text-yellow-300 rounded p-2"
                   variant="default"
                   onClick={handleConnect}
                 >
+                  <ToyBrickIcon className="w-5 h-5 mr-3" />
                   Connect LEGO Spike Prime Hub
                 </button>
-              }
+              )}
               <button
-                className="bg-blue-600 hover:bg-blue-700 focus:ring focus:ring-blue-300 rounded p-2"
+                className="bg-black flex items-center justify-center text-white border-2 border-blue-600 hover:border-blue-400 text-blue-400 rounded p-2"
                 variant="default"
                 onClick={startDealCard}
                 disabled={isSendingCommands || !isPrimeConnected}
-                >
+              >
+                <ToyBrickIcon className="h-5 w-5 -translate-x-1" />
                 Start Play Cards
               </button>
               <button
-                className="bg-red-600 hover:bg-red-700 focus:ring focus:ring-red-300 rounded p-2"
+                className="bg-black flex items-center justify-center text-white border-2 border-purple-700 hover:border-purple-400 text-purple-400 rounded p-2 "
                 variant="destructive"
                 onClick={stopDealCard}
                 disabled={isSendingCommands || !isPrimeConnected}
               >
+                <ToyBrickIcon className="w-5 h-5 mr-3" />
                 Stop Play Cards
               </button>
             </div>

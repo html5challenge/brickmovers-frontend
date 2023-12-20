@@ -7,6 +7,16 @@
   pointer-events: none;
 }
 
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
@@ -28,11 +38,36 @@
   color: #61dafb;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+@keyframes bounce {
+  0% {
+    transform: translate(-120px, 0);
   }
-  to {
-    transform: rotate(360deg);
+  12% {
+    transform: translate(-60px, -20px); /* Adjust as needed */
   }
+  24% {
+    transform: translate(0px, 0);
+  }
+  36% {
+    transform: translate(60px, -20px); /* Adjust as needed */
+  }
+  48% {
+    transform: translate(130px, 0); /* Replace 200px with the width of your text */
+  }
+  60% {
+    transform: translate(60px, -20px);
+  }
+  72% {
+    transform: translate(0px, 0); /* Adjust as needed */
+  }
+  84% {
+    transform: translate(-60px, -20px);
+  }
+  100% {
+    transform: translate(-120px, 0); /* Adjust as needed */
+  }
+}
+
+.animate-bounce {
+  animation: bounce 2s linear infinite;
 }
