@@ -333,7 +333,7 @@ function App() {
                 disabled={isSendingCommands || !isPrimeConnected}
               >
                 <ToyBrickIcon className="h-5 w-5 -translate-x-1" />
-                Start Play Cards
+                Start Play Poker
               </button>
               <button
                 className="bg-black flex items-center justify-center text-white border-2 border-purple-700 hover:border-purple-400 text-purple-400 rounded p-2 "
@@ -342,7 +342,7 @@ function App() {
                 disabled={isSendingCommands || !isPrimeConnected}
               >
                 <ToyBrickIcon className="w-5 h-5 mr-3" />
-                Stop Play Cards
+                Stop Play Poker
               </button>
             </div>
           </div>
