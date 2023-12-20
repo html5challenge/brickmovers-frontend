@@ -301,7 +301,7 @@ function App() {
             <ToyBrickIcon className="w-10 h-10 mr-3 animate-bounce" />
             <h1 className="font-bold text-6xl font-bold text-[#ffed00]" style={{marginTop: 0}}>Brick Movers</h1>
             <LegoAssistant />
-            <div className="text-4xl text-[#0057A8] bg-[#FFD500] p-3">{handleTyping}</div>
+            <div className="text-4xl text-white p-3">{handleTyping}</div>
             <button
               className={`record-button bg-gradient-to-r from-purple-400 to-blue-500 font-bold ${
                 isRecording ? "recording" : ""
