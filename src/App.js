@@ -18,6 +18,8 @@ let characteristic;
 
 function App() {
   const [isRecording, setIsRecording] = useState(false);
+  const [isPrimeConnected, setIsPrimeConnected] = useState(false)
+  const [isSendingCommands, setIsSendingCommands] = useState(false)
   const [buttonSize, setButtonSize] = useState(100);
   const [responseText, setResponseText] = useState("");
   const handleTyping = useTypewriter(responseText);
@@ -200,6 +202,7 @@ function App() {
 
     device.addEventListener("gattserverdisconnected", e => {
         console.error("disconnection");
+        setIsPrimeConnected(false);
     });
 
     const server = await device.gatt.connect();
@@ -209,17 +212,27 @@ function App() {
     characteristic.addEventListener("characteristicvaluechanged", async e => {
         const message = new TextDecoder().decode(e.target.value.buffer);
         console.info("received: " + message);
-        if (message.endsWith("rdy") && commands.length > 0) {
-            var command = commands.pop();
-            var commandStr = command.name + "|" + JSON.stringify(command.parameters) + "\n";
-
-            console.info("send command: " + commandStr);
-
-            var data = new Uint8Array([6, ...new Uint8Array(new TextEncoder().encode(commandStr))]);
-            await characteristic.writeValueWithResponse(data);
+        if (message.endsWith("rdy") && commands.length > 0 && !isSendingCommands) {
+            try {
+              setIsSendingCommands(true);
+              var command = commands[commands.length - 1];
+              var commandStr = command.name + "|" + JSON.stringify(command.parameters) + "\n";
+  
+              console.info("send command: " + commandStr);
+  
+              var data = new Uint8Array([6, ...new Uint8Array(new TextEncoder().encode(commandStr))]);
+              await characteristic.writeValueWithResponse(data);
+              commands.pop();
+            } catch (e) {
+              console.error(e);
+            } finally {
+              setIsSendingCommands(false);
+            }
         }
     });
     characteristic.startNotifications();
+
+    setIsPrimeConnected(true);
   }
 
 
@@ -259,26 +272,31 @@ function App() {
               {isRecording ? "Stop" : "Record"}
             </button>
             <div className="flex space-x-4">
-              <button
-                className="bg-green-600 hover:bg-green-700 focus:ring focus:ring-green-300 rounded p-2"
-                variant="default"
-                onClick={handleConnect}
-              >
-                Connect LEGO Spike Prime Hub
-              </button>
+              {
+                !isPrimeConnected
+                && <button
+                  className="bg-green-600 hover:bg-green-700 focus:ring focus:ring-green-300 rounded p-2"
+                  variant="default"
+                  onClick={handleConnect}
+                >
+                  Connect LEGO Spike Prime Hub
+                </button>
+              }
               <button
                 className="bg-blue-600 hover:bg-blue-700 focus:ring focus:ring-blue-300 rounded p-2"
                 variant="default"
                 onClick={startDealCard}
-              >
-                Start Play
+                disabled={isSendingCommands || !isPrimeConnected}
+                >
+                Start Play Cards
               </button>
               <button
                 className="bg-red-600 hover:bg-red-700 focus:ring focus:ring-red-300 rounded p-2"
                 variant="destructive"
                 onClick={stopDealCard}
+                disabled={isSendingCommands || !isPrimeConnected}
               >
-                Stop Play
+                Stop Play Cards
               </button>
             </div>
           </div>
